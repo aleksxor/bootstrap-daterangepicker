@@ -37,6 +37,7 @@
 
         this.oneCalendar = false;
         this.tapEvents = false;
+        this.alwaysVisible = true;
 
         this.locale = {
             applyLabel: 'Apply',
@@ -244,6 +245,10 @@
             if (typeof options.oneCalendar == 'boolean') {
                 this.oneCalendar = options.oneCalendar;
             }
+
+            if (typeof options.alwaysVisible == 'boolean') {
+                this.alwaysVisible = options.alwaysVisible;
+            }
         }
 
         if (!this.timePicker) {
@@ -265,7 +270,7 @@
             right.removeClass('right').addClass('left');
         }
 
-        if (typeof options == 'undefined' || typeof options.ranges == 'undefined') {
+        if (typeof options == 'undefined' || typeof options.ranges == 'undefined' || this.alwaysVisible) {
             if (this.oneCalendar) {
                 this.container.find('.calendar.left').show();
             } else {
@@ -533,7 +538,9 @@
 
                 this.updateInputText();
 
-                this.container.find('.calendar').hide();
+                if (!this.alwaysVisible) {
+                  this.container.find('.calendar').hide();
+                }
                 this.hide();
             }
         },
