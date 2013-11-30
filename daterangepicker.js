@@ -323,6 +323,14 @@
             .on('change', 'select.monthselect', $.proxy(this.updateMonthYear, this))
             .on('change', 'select.hourselect,select.minuteselect,select.ampmselect', $.proxy(this.updateTime, this));
 
+        if (this.tapEvents) {
+            this.container.find('.calendar')
+                .hammer({ drag_max_touches: 0 })
+                .on('drag', 'td.available', $.proxy(this.drag, this))
+                .on('dragstart', 'td.available', $.proxy(this.dragStart, this))
+                .on('dragend', 'td.available', $.proxy(this.dragEnd, this));
+        }
+
         this.container.find('.ranges')
             .on(this.clickEvents, 'button.applyBtn', $.proxy(this.clickApply, this))
             .on(this.clickEvents, 'button.cancelBtn', $.proxy(this.clickCancel, this))
@@ -344,6 +352,32 @@
 
         mousedown: function (e) {
             e.stopPropagation();
+        },
+
+        drag: function(e) {
+            if (this.dragDate) {
+                if (e.target != this.dragTarget) {
+                    this.clickDate(e, this.dragDate);
+                    this.dragTarget = e.target;
+                }
+            }
+        },
+
+        dragStart: function(e) {
+            if ($(e.target).hasClass('start-date')) {
+                this.dragDate = 'startDate';
+            } else if ($(e.target).hasClass('end-date')) {
+                this.dragDate = 'endDate';
+            }
+            this.dragTarget = e.target;
+        },
+
+        dragEnd: function(e) {
+            if (this.dragDate) {
+                this.clickDate(e, this.dragDate);
+            }
+            this.dragDate = null;
+            this.dragTarget = null;
         },
 
         updateView: function () {
@@ -539,7 +573,7 @@
 
         },
 
-        clickDate: function (e) {
+        clickDate: function (e, sDate) {
             var title = $(e.target).attr('data-title');
             var row = title.substr(1, 1);
             var col = title.substr(3, 1);
@@ -547,8 +581,10 @@
 
             if (this.oneCalendar) {
               var startDate, endDate, changedDate,
-                  tmpDate = this.leftCalendar.calendar[row][col];
-              if (Math.abs(tmpDate.valueOf() - this.startDate.valueOf()) <= Math.abs(tmpDate.valueOf() - this.endDate.valueOf())) {
+                  tmpDate = this.leftCalendar.calendar[row][col],
+                  distToStart = Math.abs(tmpDate.valueOf() - this.startDate.valueOf()),
+                  distToEnd = Math.abs(tmpDate.valueOf() - this.endDate.valueOf());
+              if (sDate == 'startDate' || (typeof sDate == "undefined" && distToStart <= distToEnd)) {
                   startDate = tmpDate;
                   endDate = this.endDate;
                   changedDate = startDate;
@@ -558,7 +594,7 @@
                           endDate = maxDate;
                       }
                   }
-              } else {
+              } else if (sDate == 'endDate' || (typeof sDate == "undefined" && distToEnd < distToStart)) {
                   startDate = this.startDate;
                   endDate = tmpDate;
                   changedDate = endDate;
